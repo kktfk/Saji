@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saji</title>
+  <style>
+    body {
+      background-color: rgba(200, 189, 173, 1);
+      color: #333;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      background-color: rgba(200, 189, 173, 1);
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    h1 {
+      font-family: Optima, sans-serif;
+      margin: 0 auto;
+      position: absolute;
+      left: 0;
+      right: 0;
+      text-align: center;
+    }
+
+    nav {
+      margin-left: auto;
+      position: relative;
+      z-index: 1001;
+    }
+
+    .menu-button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      z-index: 1000;
+      border-radius: 10px;
+      white-space: nowrap;
+      grid-template-columns: repeat(3, auto);
+      gap: 10px;
+    }
+
+    .menu a {
+      text-decoration: none;
+      color: #333;
+      padding: 5px 10px;
+    }
+
+    .menu a:hover {
+      background-color: #eee;
+      border-radius: 10px;
+    }
+
+    main {
+      width: 90%;
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    section {
+      display: none;
+      margin-top: 20px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    input, select, button {
+      font-size: 16px;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      width: 100%;
+      box-sizing: border-box;
+      background-color: white;
+    }
+
+    button {
+      background-color: #a68b6d;
+      color: white;
+      border: none;
+    }
+
+    .result {
+      font-weight: bold;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Saji</h1>
+    <nav>
+      <button class="menu-button" onclick="toggleMenu()">☰</button>
+      <div class="menu" id="menu">
+        <a href="#" onclick="showSection('convert')">さじ→グラム変換</a>
+        <a href="#" onclick="showSection('reverse')">グラム→さじ換算</a>
+        <a href="#" onclick="showSection('ratio')">分量比計算</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section id="convert" class="active">
+      <h2>さじ⇨グラム</h2>
+      <select id="ingredient"></select>
+      <select id="spoon">
+        <option value="tsp">小さじ</option>
+        <option value="tbsp">大さじ</option>
+      </select>
+      <input id="amount" placeholder="何さじか入力" onkeydown="if(event.key === 'Enter') convert()">
+      <button onclick="convert()">計算</button>
+      <div class="result" id="result"></div>
+    </section>
+
+    <section id="reverse">
+      <h2>グラム⇨さじ</h2>
+      <select id="reverse-ingredient"></select>
+      <input id="grams" placeholder="グラムを入力" onkeydown="if(event.key === 'Enter') reverseConvert()">
+      <button onclick="reverseConvert()">計算</button>
+      <div class="result" id="reverse-result"></div>
+    </section>
+
+    <section id="ratio">
+      <h2>分量比計算</h2>
+      <p>比率（例: 1:2）と A の量を入力してください</p>
+      <input id="fixed" placeholder="Aの量を入力 (g)" onkeydown="if(event.key === 'Enter') calcRatio()">
+      <input id="ratioA" placeholder="Aの比率 (例: 1)" onkeydown="if(event.key === 'Enter') calcRatio()">
+      <input id="ratioB" placeholder="Bの比率 (例: 2)" onkeydown="if(event.key === 'Enter') calcRatio()">
+      <button onclick="calcRatio()">計算</button>
+      <div class="result" id="ratio-result"></div>
+    </section>
+  </main>
+
+  <script>
+    const ingredients = {
+      'しょうゆ': 6, '塩': 6, 'あら塩': 5, '酒': 5, '酢': 5, 'みりん': 6, 'みそ': 6, '上白糖': 3, 'グラニュー糖': 4, 'きび砂糖': 3, '三温糖': 3, '甜菜糖': 3, '粉砂糖': 2, 'ざらめ': 5,
+      '油': 4, 'バター': 4, 'マヨネーズ': 4, 'ケチャップ': 6, '水': 5, 'だし汁': 5, '牛乳': 5, 'ヨーグルト': 5, '生クリーム': 5, '練りごま': 5, 'オイスターソース': 6, 'めんつゆ': 6, 'ウスターソース': 6,
+      '豆板醤': 5, '甜麺醤': 6, 'コチュジャン': 6, '青のり': 1, '小麦粉': 3, '片栗粉': 3, '上新粉': 3, '米粉': 3, 'ベーキングパウダー': 4,
+      'はちみつ': 7, 'ジャム': 7, '水あめ': 7, '粉ゼラチン': 3, 'ごま': 3, 'すりごま': 3, '粉チーズ': 2, 'カレー粉': 2, 'コーンスターチ': 2,
+      '紅茶（茶葉）': 2, '番茶（茶葉）': 2, '煎茶（茶葉）': 2, 'レギュラーコーヒー': 2, 'ココア': 2, '抹茶': 2, 'パン粉': 1, '生パン粉': 1
+    };
+
+    const ingredientSelects = [document.getElementById('ingredient'), document.getElementById('reverse-ingredient')];
+    ingredientSelects.forEach(select => {
+      for (const key in ingredients) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = key;
+        select.appendChild(option);
+      }
+    });
+
+    function convert() {
+      const name = document.getElementById('ingredient').value;
+      const spoon = document.getElementById('spoon').value;
+      let amount = document.getElementById('amount').value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 65248));
+      const factor = spoon === 'tbsp' ? 3 : 1;
+      const gram = ingredients[name] * parseFloat(amount) * factor;
+      document.getElementById('result').textContent = isNaN(gram) ? '正しい値を入力してください' : `${gram} g`;
+    }
+
+    function reverseConvert() {
+      const name = document.getElementById('reverse-ingredient').value;
+      let grams = document.getElementById('grams').value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 65248));
+      const tsp = parseFloat(grams) / ingredients[name];
+      const tbsp = tsp / 3;
+      document.getElementById('reverse-result').textContent = isNaN(tsp) ? '正しい値を入力してください' : `小さじ ${tsp.toFixed(2)} 杯 / 大さじ ${tbsp.toFixed(2)} 杯`;
+    }
+    function calcRatio() {
+  let a = document.getElementById('fixed').value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 65248));
+  let ratioA = document.getElementById('ratioA').value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 65248));
+  let ratioB = document.getElementById('ratioB').value.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 65248));
+
+  const aVal = parseFloat(a);
+  const ratioAVal = parseFloat(ratioA);
+  const ratioBVal = parseFloat(ratioB);
+
+  if (isNaN(aVal) || isNaN(ratioAVal) || isNaN(ratioBVal)) {
+    document.getElementById('ratio-result').textContent = '正しい値を入力してください';
+    return;
+  }
+
+  const bVal = aVal * (ratioBVal / ratioAVal);
+  document.getElementById('ratio-result').textContent = `Aの量: ${aVal}g / Bの量: ${bVal.toFixed(2)}g`;
+}
+
+    function toggleMenu(forceClose = false) {
+      const menu = document.getElementById('menu');
+      if (forceClose) {
+        menu.style.display = 'none';
+      } else {
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+      }
+    }
+
+    function showSection(id) {
+      document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      toggleMenu(true);
+    }
+  </script>
+</body>
+
+</html>
