@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.saji-app.com/sitemap.xml
